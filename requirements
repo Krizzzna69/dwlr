@@ -1,0 +1,5 @@
+Flask==2.3.4
+psycopg2-binary==2.9.6
+pandas==2.1.1
+plotly==5.10.1
+twilio==7.20.0
