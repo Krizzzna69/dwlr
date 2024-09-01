@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            padding: 20px;
+            background-color: #0078d4;
+            color: white;
+            margin: 0;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .button-container button, .button-container select, .button-container input {
+            margin: 10px;
+        }
+        .button-container button {
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .button-container button:hover {
+            background-color: #005a9e;
+        }
+        .button-container select, .button-container input {
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        .chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        .charts {
+            width: 100%;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .metrics-charts {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .chart {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 48%; /* Adjust width to fit side by side */
+        }
+        .chart h2 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        .hidden {
+            display: none;
+        }
+        .alerts-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+        .alert-box {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            width: 48%;
+        }
+        .alert-box h3 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        .alert-box ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .alert-box li {
+            padding: 5px 0;
+        }
+
+    </style>
+    <script>
+        function updateGraph() {
+            var selectedMetric = document.getElementById('metric-select').value;
+            var selectedDWLR = document.getElementById('dwlr-select').value;
+            var fromDate = document.getElementById('from-date').value;
+            var toDate = document.getElementById('to-date').value;
+            var city = document.getElementById('city-select').value;
+
+            if (selectedMetric && selectedDWLR && fromDate && toDate && city) {
+                // Construct the URL with the selected parameters
+                var url = '/?metric=' + selectedMetric +
+                          '&dwlr=' + selectedDWLR +
+                          '&start_date=' + fromDate +
+                          '&end_date=' + toDate +
+                          '&city=' + city;
+                window.location.href = url;
+            } else {
+                alert('Please fill in all fields.');
+            }
+        }
+
+        function updateCityAndDWLR() {
+            var city = document.getElementById('city-select').value;
+            var dwlrSelect = document.getElementById('dwlr-select');
+
+            // Update DWLR options based on selected city
+            if (city === 'nuzvid') {
+                dwlrSelect.innerHTML = '<option value="dwlr1">DWLR 1</option><option value="dwlr2">DWLR 2</option>';
+            }
+            else if (city ==='vijayawada'){
+            dwlrSelect.innerHTML = '<option value="dwlr3">DWLR 3</option><option value="dwlr4">DWLR 4</option>';
+            }
+
+            else {
+                dwlrSelect.innerHTML = '<option value="">Select DWLR</option>';
+            }
+        }
+
+        function toggleVisibility(id) {
+            var metrics = document.getElementById('metrics');
+            var alerts = document.getElementById('alerts');
+
+            if (id === 'metrics') {
+                metrics.classList.remove('hidden');
+                alerts.classList.add('hidden');
+            } else {
+                metrics.classList.add('hidden');
+                alerts.classList.remove('hidden');
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Dashboard</h1>
+
+    <div class="button-container">
+        <select id="city-select" onchange="updateCityAndDWLR()">
+            <option value="">Select City</option>
+            <option value="vijayawada">Vijayawada</option>
+            <option value="nuzvid">Nuzvid</option>
+            <option value="machilipatnam">Machilipatnam</option>
+            <option value="vishakapatnam">Vishakapatnam</option>
+        </select>
+
+        <select id="dwlr-select">
+            <option value="">Select DWLR</option>
+            <!-- DWLR options will be populated based on selected city -->
+        </select>
+
+        <select id="metric-select">
+            <option value="water-level">Water Level</option>
+            <option value="temperature">Temperature</option>
+            <option value="pressure">Pressure</option>
+        </select>
+
+        <input type="date" id="from-date">
+        <input type="date" id="to-date">
+
+        <button onclick="toggleVisibility('alerts')">Alerts</button>
+        <button onclick="updateGraph()">Submit</button>
+    </div>
+
+    <div id="metrics" class="chart-container">
+        <div class="charts">
+            <div id="selected-graph">
+                <h2>Selected Graph</h2>
+                <!-- Insert selected graph HTML or JavaScript here -->
+                {{ selected_graph_html|safe }}
+            </div>
+        </div>
+        <div class="metrics-charts">
+            <div class="chart" id="z-score-chart">
+                <h2>Z-Score</h2>
+                <!-- Insert Z-Score graph HTML or JavaScript here -->
+                {{ z_score_graph_html|safe }}
+            </div>
+            <div class="chart" id="iqr-chart">
+                <h2>IQR</h2>
+                <!-- Insert IQR graph HTML or JavaScript here -->
+                {{ iqr_graph_html|safe }}
+            </div>
+        </div>
+    </div>
+
+    <div id="alerts" class="hidden">
+        <h2>Alerts</h2>
+        <div class="alerts-container">
+            <div class="alert-box">
+                <h3>Water Level Alerts</h3>
+                <ul>
+                    {% for alert in water_level_alerts %}
+                        <li>{{ alert }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="alert-box">
+                <h3>Battery Level Alerts</h3>
+                <ul>
+                    {% for alert in battery_level_alerts %}
+                        <li>{{ alert }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

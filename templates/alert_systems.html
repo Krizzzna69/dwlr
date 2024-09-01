@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alert Systems</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Dashboard</h1>
+
+        <div class="row mt-4">
+            <!-- Water Level Alerts on the left -->
+            <div class="col-md-6">
+                <h3>Water Level Alerts</h3>
+                <ul class="list-group">
+                    <!-- Example Water Level Alerts -->
+                    <li class="list-group-item list-group-item-danger">Critical Zone Alert: Water level is 5.0 meters</li>
+                    <li class="list-group-item list-group-item-danger">Critical Zone Alert: Water level is 5.1 meters</li>
+                    <!-- Add more water level alerts as needed -->
+                </ul>
+            </div>
+
+            <!-- Battery Level Alerts on the right -->
+            <div class="col-md-6">
+                <h3>Battery Level Alerts</h3>
+                <ul class="list-group">
+                    <!-- Example Battery Level Alerts -->
+                    <li class="list-group-item list-group-item-warning">Low Battery Alert: Battery level is 19%</li>
+                    <li class="list-group-item list-group-item-warning">Low Battery Alert: Battery level is 12%</li>
+                    <!-- Add more battery level alerts as needed -->
+                </ul>
+            </div>
+        </div>
+
+        <!-- Buttons for Metrics and Alerts -->
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <button class="btn btn-primary">Metrics</button>
+                <select class="form-select d-inline-block w-auto" aria-label="Metric selection">
+                    <option value="temperature">Temperature</option>
+                    <!-- Add other metric options here -->
+                </select>
+                <button class="btn btn-secondary">Alerts</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
