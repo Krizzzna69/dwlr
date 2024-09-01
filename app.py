@@ -22,12 +22,6 @@ CONNECTION = {
 client = Client(keys.account_sid, keys.auth_token)
 
 # Function to send an alert via Twilio
-def send_alert(alert, alert_type):
-    client.messages.create(
-        body=alert,
-        from_=keys.twilio_number,
-        to=keys.target_number
-    )
 
 # Function to monitor alerts
 def monitor_alerts():
@@ -37,12 +31,12 @@ def monitor_alerts():
 
         for alert in water_level_alerts:
             if alert not in sent_alerts:
-                send_alert(alert, "Water Level")
+
                 sent_alerts.add(alert)
 
         for alert in battery_level_alerts:
             if alert not in sent_alerts:
-                send_alert(alert, "Battery Level")
+
                 sent_alerts.add(alert)
 
         time.sleep(60)  # Check every 60 seconds
