@@ -6,6 +6,9 @@ import threading
 import time
 from twilio.rest import Client
 import keys  # Assuming keys.py contains your Twilio credentials
+from sklearn.linear_model import LinearRegression
+import numpy as np
+
 
 app = Flask(__name__)
 
@@ -21,7 +24,58 @@ CONNECTION = {
 # Twilio client setup
 client = Client(keys.account_sid, keys.auth_token)
 
+
+def create_trend_analysis_figures(df):
+    # Extracting the necessary columns
+    timestamps = pd.to_datetime(df['Timestamp']).astype(int) / 10 ** 9  # Convert to Unix timestamp for fitting
+    X = timestamps.values.reshape(-1, 1)
+
+    # Prepare figures
+    trend_fig = go.Figure()
+
+    for column in ['Water Level (m)', 'Temperature (°C)', 'Pressure (Pa)']:
+        y = df[column].values
+
+        # Fit a linear regression model
+        model = LinearRegression().fit(X, y)
+        trend_line = model.predict(X)
+
+        trend_fig.add_trace(go.Scatter(
+            x=df['Timestamp'],
+            y=y,
+            mode='lines+markers',
+            name=f'{column} Data'
+        ))
+        trend_fig.add_trace(go.Scatter(
+            x=df['Timestamp'],
+            y=trend_line,
+            mode='lines',
+            name=f'{column} Trend Line',
+            line=dict(dash='dash')
+        ))
+
+    trend_fig.update_layout(
+        yaxis=dict(
+            title='Value'
+        ),
+        xaxis=dict(
+            title='Timestamp',
+            tickformat='%Y-%m-%d %H:%M:%S',
+            tickangle=-45
+        ),
+        title='Trend Analysis for Metrics'
+    )
+
+    return trend_fig
+
 # Function to send an alert via Twilio
+def send_alert(alert, alert_type):
+    client.messages.create(
+        body=alert,
+        from_=keys.twilio_number,
+        to=keys.target_number
+    )
+
 
 # Function to monitor alerts
 def monitor_alerts():
@@ -31,15 +85,16 @@ def monitor_alerts():
 
         for alert in water_level_alerts:
             if alert not in sent_alerts:
-
+                send_alert(alert, "Water Level")
                 sent_alerts.add(alert)
 
         for alert in battery_level_alerts:
             if alert not in sent_alerts:
-
+                send_alert(alert, "Battery Level")
                 sent_alerts.add(alert)
 
         time.sleep(60)  # Check every 60 seconds
+
 
 # Function to fetch paginated data and generate alerts
 def fetch_paginated_data_and_alerts(limit, offset, table_name, start_date=None, end_date=None):
@@ -73,12 +128,12 @@ def fetch_paginated_data_and_alerts(limit, offset, table_name, start_date=None, 
 
     return df, water_level_alerts, battery_level_alerts
 
-# Function to create figures with hover and trend analysis
+
+# Function to create figures with hover
 def create_figures_with_hover(df):
     # Water Level Bar Chart
-    water_level_colors = ['red' if level >= 10 else 'blue' for level in df['Water Level (m)']]
-    pressure_level = ['red' if level >=103000 else 'blue' for level in df['Pressure (Pa)']]
-    temperature_level = ['red' if level >= 70 else 'blue' for level in df['Temperature (°C)']]
+    water_level_colors = ['blue' if level >= 5 else 'green' for level in df['Water Level (m)']]
+
     bar_fig = go.Figure()
     bar_fig.add_trace(go.Bar(
         x=df['Timestamp'],
@@ -107,7 +162,6 @@ def create_figures_with_hover(df):
     temp_fig.add_trace(go.Scatter(
         x=df['Timestamp'],
         y=df['Temperature (°C)'],
-        marker_color=temperature_level,
         mode='lines+markers',
         name='Temperature (°C)'
     ))
@@ -128,13 +182,11 @@ def create_figures_with_hover(df):
     pressure_fig.add_trace(go.Bar(
         x=df['Timestamp'],
         y=df['Pressure (Pa)'],
-        marker_color=pressure_level,
-        name='Pressure(hPa)'
-
+        name='Barometric Pressure(hPa)'
     ))
     pressure_fig.update_layout(
         yaxis=dict(
-            title='Pressure(Pa)'
+            title='Barometric Pressure(hPa)'
         ),
         xaxis=dict(
             title='Timestamp',
@@ -264,29 +316,8 @@ def create_figures_with_hover(df):
         title='IQR of Pressure'
     )
 
-    # Trend Analysis
-    trend_fig = go.Figure()
-    for metric in ['Water Level (m)', 'Temperature (°C)', 'Pressure (Pa)']:
-        trend_fig.add_trace(go.Scatter(
-            x=df['Timestamp'],
-            y=df[metric],
-            mode='lines+markers',
-            name=metric
-        ))
+    return bar_fig, temp_fig, pressure_fig, z_score_fig_water_level, iqr_fig_water_level, z_score_fig_temp, iqr_fig_temp, z_score_fig_pressure, iqr_fig_pressure
 
-    trend_fig.update_layout(
-        yaxis=dict(
-            title='Value'
-        ),
-        xaxis=dict(
-            title='Timestamp',
-            tickformat='%Y-%m-%d %H:%M:%S',
-            tickangle=-45
-        ),
-        title='Trend Analysis'
-    )
-
-    return bar_fig, temp_fig, pressure_fig, z_score_fig_water_level, iqr_fig_water_level, z_score_fig_temp, iqr_fig_temp, z_score_fig_pressure, iqr_fig_pressure, trend_fig
 
 @app.route('/')
 def index():
@@ -299,17 +330,19 @@ def index():
 
     # Fetch data and alerts
     df, water_level_alerts, battery_level_alerts = fetch_paginated_data_and_alerts(
-        50, 0, table_name, start_date, end_date
+        100, 0, table_name, start_date, end_date
     )
-    bar_fig, temp_fig, pressure_fig, z_score_fig_water_level, iqr_fig_water_level, z_score_fig_temp, iqr_fig_temp, z_score_fig_pressure, iqr_fig_pressure, trend_fig = create_figures_with_hover(
+    bar_fig, temp_fig, pressure_fig, z_score_fig_water_level, iqr_fig_water_level, z_score_fig_temp, iqr_fig_temp, z_score_fig_pressure, iqr_fig_pressure = create_figures_with_hover(
         df)
+
+    # Create trend analysis figures
+    trend_fig = create_trend_analysis_figures(df)
 
     # Select the appropriate figure based on the metric
     selected_graph_html = {
         'water-level': bar_fig.to_html(full_html=False),
         'temperature': temp_fig.to_html(full_html=False),
         'pressure': pressure_fig.to_html(full_html=False),
-        'trend-analysis': trend_fig.to_html(full_html=False),
     }.get(metric, bar_fig.to_html(full_html=False))
 
     # Select the appropriate Z-Score and IQR figures based on the metric
@@ -332,7 +365,7 @@ def index():
         pressure_graph_html=pressure_fig.to_html(full_html=False),
         z_score_graph_html=selected_z_score_html,
         iqr_graph_html=selected_iqr_html,
-        trend_graph_html=trend_fig.to_html(full_html=False),
+        trend_graph_html=trend_fig.to_html(full_html=False),  # Pass the trend analysis figure
         selected_graph_html=selected_graph_html,
         water_level_alerts=water_level_alerts,
         battery_level_alerts=battery_level_alerts,

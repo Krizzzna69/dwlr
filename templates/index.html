@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
     <style>
+        /* Include the updated CSS here */
         body {
             font-family: Arial, sans-serif;
             background-color: #f4f4f4;
@@ -106,7 +107,9 @@
         .alert-box li {
             padding: 5px 0;
         }
-
+        .trend{
+        width:100%;
+        }
     </style>
     <script>
         function updateGraph() {
@@ -116,34 +119,17 @@
             var toDate = document.getElementById('to-date').value;
             var city = document.getElementById('city-select').value;
 
-            if (selectedMetric && selectedDWLR && fromDate && toDate && city) {
-                // Construct the URL with the selected parameters
-                var url = '/?metric=' + selectedMetric +
-                          '&dwlr=' + selectedDWLR +
-                          '&start_date=' + fromDate +
-                          '&end_date=' + toDate +
-                          '&city=' + city;
-                window.location.href = url;
-            } else {
-                alert('Please fill in all fields.');
-            }
+            // Construct the URL with the selected parameters
+            var url = '/?metric=' + selectedMetric +
+                      '&dwlr=' + selectedDWLR +
+                      '&start_date=' + fromDate +
+                      '&end_date=' + toDate +
+                      '&city=' + city;
+            window.location.href = url;
         }
 
-        function updateCityAndDWLR() {
-            var city = document.getElementById('city-select').value;
-            var dwlrSelect = document.getElementById('dwlr-select');
-
-            // Update DWLR options based on selected city
-            if (city === 'nuzvid') {
-                dwlrSelect.innerHTML = '<option value="dwlr1">DWLR 1</option><option value="dwlr2">DWLR 2</option>';
-            }
-            else if (city ==='vijayawada'){
-            dwlrSelect.innerHTML = '<option value="dwlr3">DWLR 3</option><option value="dwlr4">DWLR 4</option>';
-            }
-
-            else {
-                dwlrSelect.innerHTML = '<option value="">Select DWLR</option>';
-            }
+        function updateDWLR() {
+            updateGraph();  // Call updateGraph to handle DWLR and metric updates together
         }
 
         function toggleVisibility(id) {
@@ -158,56 +144,81 @@
                 alerts.classList.remove('hidden');
             }
         }
+
+        function updateCityOptions() {
+            var city = document.getElementById('city-select').value;
+            var dwlrSelect = document.getElementById('dwlr-select');
+
+            // Clear current DWLR options
+            dwlrSelect.innerHTML = '<option value="">Select DWLR</option>';
+
+            if (city === 'nuzvid') {
+                var dwlrOptions = ['dwlr1', 'dwlr2'];
+                dwlrOptions.forEach(function(dwlr) {
+                    var option = document.createElement('option');
+                    option.value = dwlr;
+                    option.textContent = dwlr.charAt(0).toUpperCase() + dwlr.slice(1);
+                    dwlrSelect.appendChild(option);
+                });
+            } else if (city === 'vijayawada') {
+                var dwlrOptions = ['dwlr3', 'dwlr4'];
+                dwlrOptions.forEach(function(dwlr) {
+                    var option = document.createElement('option');
+                    option.value = dwlr;
+                    option.textContent = dwlr.charAt(0).toUpperCase() + dwlr.slice(1);
+                    dwlrSelect.appendChild(option);
+                });
+            }
+        }
     </script>
 </head>
 <body>
     <h1>Dashboard</h1>
 
     <div class="button-container">
-        <select id="city-select" onchange="updateCityAndDWLR()">
+        <select id="city-select" onchange="updateCityOptions()">
             <option value="">Select City</option>
             <option value="vijayawada">Vijayawada</option>
             <option value="nuzvid">Nuzvid</option>
-            <option value="machilipatnam">Machilipatnam</option>
-            <option value="vishakapatnam">Vishakapatnam</option>
         </select>
-
         <select id="dwlr-select">
             <option value="">Select DWLR</option>
             <!-- DWLR options will be populated based on selected city -->
         </select>
 
         <select id="metric-select">
-            <option value="water-level">Water Level</option>
-            <option value="temperature">Temperature</option>
-            <option value="pressure">Pressure</option>
+            <option value="water-level" {% if selected_metric =='water-level' %}selected{% endif %}>Water Level</option>
+            <option value="temperature" {% if selected_metric =='temperature' %}selected{% endif %}>Temperature</option>
+            <option value="pressure" {% if selected_metric =='pressure' %}selected{% endif %}>Pressure</option>
         </select>
 
-        <input type="date" id="from-date">
-        <input type="date" id="to-date">
+        <input type="date" id="from-date" value="{{ start_date }}">
+        <input type="date" id="to-date" value="{{ end_date }}">
 
         <button onclick="toggleVisibility('alerts')">Alerts</button>
         <button onclick="updateGraph()">Submit</button>
     </div>
 
-    <div id="metrics" class="chart-container">
-        <div class="charts">
-            <div id="selected-graph">
-                <h2>Selected Graph</h2>
-                <!-- Insert selected graph HTML or JavaScript here -->
+    <div id="metrics">
+        <div class="chart-container">
+            <div class="charts">
                 {{ selected_graph_html|safe }}
             </div>
         </div>
         <div class="metrics-charts">
-            <div class="chart" id="z-score-chart">
+            <div class="chart">
                 <h2>Z-Score</h2>
-                <!-- Insert Z-Score graph HTML or JavaScript here -->
                 {{ z_score_graph_html|safe }}
             </div>
-            <div class="chart" id="iqr-chart">
+            <div class="chart">
                 <h2>IQR</h2>
-                <!-- Insert IQR graph HTML or JavaScript here -->
                 {{ iqr_graph_html|safe }}
+            </div>
+        </div>
+        <div class="chart-container">
+            <div class="trend">
+                <h2>Trend Analysis</h2>
+                {{ trend_graph_html|safe }}  <!-- Add the trend analysis graph -->
             </div>
         </div>
     </div>
